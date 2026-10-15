@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Projeto ARGO · Pitch de Deliberação</title>
+    <script src="assets/vendor/tailwind.js"></script>
+    <link href="assets/vendor/aos.css" rel="stylesheet">
+    <script src="assets/vendor/aos.js"></script>
+    <script src="assets/vendor/lucide.js"></script>
+    <script src="assets/vendor/d3.v7.min.js"></script>
+    <link href="assets/vendor/inter.css" rel="stylesheet">
+    <style>
+        /* @MIRA:THEME:START */
+/* MIRA THEME: mira-dark (padrão) + override de cor principal
+   Identidade clássica do canal: fundo preto, glassmorphism no estilo
+   clássico do canal. Primária sobreposta para ciano (#00FFFF) a pedido
+   do usuário; demais variáveis do tema base preservadas. */
+:root {
+    --mira-primary: #00FFFF;
+    --mira-crop: #35D07F;
+    --mira-bg: #000000;
+    --mira-text: #ffffff;
+    --mira-text-soft: rgba(255, 255, 255, 0.70);
+    --mira-text-softer: rgba(255, 255, 255, 0.50);
+    --mira-card-bg: rgba(255, 255, 255, 0.05);
+    --mira-card-border: rgba(255, 255, 255, 0.10);
+    --mira-glow-soft: rgba(0, 255, 255, 0.15);
+    --mira-glow-strong: rgba(0, 255, 255, 0.25);
+    --mira-icon-bg: rgba(0, 255, 255, 0.15);
+    --mira-icon-border: rgba(0, 255, 255, 0.30);
+    --mira-pill-bg: rgba(255, 255, 255, 0.04);
+    --mira-pill-border: rgba(255, 255, 255, 0.08);
+    --mira-stage-glow: rgba(0, 255, 255, 0.06);
+    --mira-accent-2: #59FFFF;
+}
+
+
+/* ============================================================
+   MIRA — base.css
+   Estrutura compartilhada por todos os temas.
+   Os temas definem apenas as CSS variables (--mira-*).
+   ============================================================ */
+
+body {
+    background: var(--mira-bg);
+    min-height: 100vh;
+    color: var(--mira-text);
+    font-family: 'Inter', sans-serif;
+}
+
+.primary-color { color: var(--mira-primary); }
+.primary-bg { background: var(--mira-primary); }
+
+.glass-card {
+    background: var(--mira-card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--mira-card-border);
+    box-shadow: 0 10px 30px var(--mira-glow-soft);
+    transition: all 0.3s ease;
+    border-radius: 0.75rem;
+}
+
+.glass-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px var(--mira-glow-strong);
+}
+
+.icon-hero {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    background: var(--mira-icon-bg);
+    border: 1px solid var(--mira-icon-border);
+}
+
+.attribute-pill {
+    background: var(--mira-pill-bg);
+    border: 1px solid var(--mira-pill-border);
+    transition: all 0.25s ease;
+    border-radius: 9999px;
+}
+
+.attribute-pill:hover {
+    background: var(--mira-icon-bg);
+    border-color: var(--mira-icon-border);
+    transform: translateY(-3px);
+}
+
+/* Palco de animação D3 — tamanho padrão do canvas */
+.anim-stage {
+    width: 100%;
+    height: clamp(400px, 60vh, 620px);
+    background: radial-gradient(circle at 50% 50%, var(--mira-stage-glow), transparent 70%);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.anim-stage svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Palcos D3 (slides 4 e 10) mais altos: a órbita e o ciclo ganham mais tela */
+#harness-stage, #ciclo-stage { height: clamp(480px, 70vh, 700px); }
+
+.replay-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    background: var(--mira-pill-bg);
+    border: 1px solid var(--mira-pill-border);
+    color: var(--mira-text-soft);
+    border-radius: 9999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.replay-btn:hover {
+    background: var(--mira-icon-bg);
+    color: var(--mira-primary);
+}
+
+.text-soft { color: var(--mira-text-soft); }
+.text-softer { color: var(--mira-text-softer); }
+
+@keyframes mira-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+@keyframes mira-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes mira-gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* @MIRA:THEME:END */
+
+        /* === CONTROLES DE SLIDE (passagem card-a-card) === */
+        html { scroll-behavior: smooth; }
+        /* Scroll discreto (padrao Mira): a navegacao e por teclado/botao e o
+           progresso ja aparece na barra do topo; a scrollbar fica quase invisivel. */
+        html { scrollbar-width: thin; scrollbar-color: #2e2e2e #0d0d0d; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; background: #0d0d0d; }
+        ::-webkit-scrollbar-track { background: #0d0d0d; }
+        ::-webkit-scrollbar-thumb { background: #2e2e2e; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+        ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+        #mira-progress {
+            position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+            background: linear-gradient(90deg, var(--mira-primary), var(--mira-accent-2), var(--mira-primary));
+            background-size: 200% 100%;
+            animation: mira-shimmer 2s linear infinite;
+            z-index: 9999; transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--mira-glow-strong);
+        }
+
+        @keyframes mira-shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        #mira-next {
+            position: fixed; bottom: 32px; right: 32px;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--mira-primary); color: var(--mira-bg);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.3s ease; z-index: 9998;
+            box-shadow: 0 4px 20px var(--mira-glow-strong);
+        }
+        #mira-next.visible { opacity: 1; transform: translateY(0); }
+        #mira-next:hover { transform: translateY(-3px) scale(1.1); }
+
+/* @MIRA:RESPONSIVE:START */
+/* ============================================================
+   MIRA — responsive.css  (camada de reflow mobile-first)
+   Objetivo: TODO slide 16:9 do Mira vira legível no celular em
+   retrato SEM arquivo mobile separado. O mesmo deck se reorganiza:
+   fontes encolhem, grids empilham, padding reduz, palcos escalam.
+
+   Estratégia: os decks nascem "desktop-first" (classes Tailwind com
+   tamanhos fixos: text-6xl, p-10, ...). Esta camada sobrescreve essas
+   classes abaixo de 640px. Usa !important de propósito — precisa
+   vencer o Tailwind CDN (injetado em runtime) em decks legados sem
+   reescrever o HTML. Os clamps têm teto ~= valor desktop, então em
+   telas largas nada muda; só encolhem no estreito.
+   ============================================================ */
+
+/* Guarda universal contra overflow horizontal (o "print cortado" no zap). */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, svg, video, canvas, iframe, table, pre { max-width: 100%; }
+
+@media (max-width: 640px) {
+
+  /* --- Tipografia fluida: encolhe títulos gigantes no celular --- */
+  .text-9xl { font-size: clamp(3rem, 12vw, 5rem)      !important; line-height: 1.05 !important; }
+  .text-8xl { font-size: clamp(2.75rem, 11vw, 4.5rem) !important; line-height: 1.06 !important; }
+  .text-7xl { font-size: clamp(2.25rem, 10vw, 3.75rem)!important; line-height: 1.08 !important; }
+  .text-6xl { font-size: clamp(2rem, 9vw, 3rem)       !important; line-height: 1.1  !important; }
+  .text-5xl { font-size: clamp(1.75rem, 8vw, 2.5rem)  !important; line-height: 1.12 !important; }
+  .text-4xl { font-size: clamp(1.5rem, 7vw, 2rem)     !important; line-height: 1.15 !important; }
+  .text-3xl { font-size: clamp(1.35rem, 6vw, 1.75rem) !important; line-height: 1.2  !important; }
+  .text-2xl { font-size: clamp(1.2rem, 5vw, 1.5rem)   !important; line-height: 1.25 !important; }
+  .text-xl  { font-size: clamp(1.05rem, 4.5vw, 1.25rem)!important; line-height: 1.3  !important; }
+
+  /* Títulos: quebram entre palavras; só partem uma palavra se ela sozinha
+     estourar a largura. Sem hyphens:auto — em PT ele hifena no meio
+     ("pode-rosas") e fica feio em título de display. */
+  h1, h2, h3 { overflow-wrap: break-word; }
+
+  /* --- Espaçamento: paddings de desktop sufocam o celular --- */
+  .p-12 { padding: 1.25rem !important; }
+  .p-10 { padding: 1.15rem !important; }
+  .p-8  { padding: 1.05rem !important; }
+  .px-12, .px-10 { padding-left: 1.15rem !important; padding-right: 1.15rem !important; }
+  .px-8 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-16 { padding-top: 2.5rem !important; padding-bottom: 2.5rem !important; }
+  .gap-8 { gap: 1rem !important; }
+  .gap-10, .gap-12 { gap: 1.25rem !important; }
+
+  /* --- Layout: seção de slide sempre alcançável pelo topo ---
+     min-h-screen + justify-center clipa o topo quando o conteúdo é
+     maior que a tela. No celular, ancora no topo e deixa rolar. */
+  .min-h-screen {
+    min-height: 100dvh !important;
+    height: auto !important;
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+  .min-h-screen.justify-center,
+  .min-h-screen.items-center { justify-content: flex-start !important; }
+
+  /* --- Grids/flex de 2+ colunas empilham (redundante ao md: do
+         Tailwind, mas cobre grids sem breakpoint declarado). --- */
+  .grid-cols-2, .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr !important; }
+
+  /* --- Palco de animação (D3/SVG/canvas): nunca estoura a largura,
+         mantém proporção e encolhe a altura. --- */
+  .anim-stage {
+    max-width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 16 / 9;
+    min-height: 0 !important;
+  }
+
+  /* --- Tabelas: fonte menor + rolagem horizontal se precisar. --- */
+  table { font-size: 0.82rem !important; }
+  .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+
+  /* --- Controles flutuantes respeitam a safe-area do iPhone. --- */
+  #mira-next, #next-card {
+    bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+    right: max(1rem, env(safe-area-inset-right)) !important;
+    width: 44px !important; height: 44px !important;
+  }
+}
+/* @MIRA:RESPONSIVE:END */
+
+        /* === LOOPS INTERNOS POR SLIDE (Regra Zero: entra e continua em loop) === */
+
+        /* Capa: cascata matrix clássica (binários caindo, canvas) + texto protegido por sombra própria */
+        .capa-matrix { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.85; }
+        .capa-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.38), rgba(0,0,0,0.12)); }
+        .capa-conteudo { text-shadow: 0 2px 20px rgba(0,0,0,0.9), 0 0 46px rgba(0,0,0,0.7); }
+        .capa-selo { animation: mira-pulse 4s ease-in-out infinite; }
+
+        /* Marca do projeto (selo ARGO extraído do infográfico oficial) */
+        .marca-capa { width: clamp(120px, 16vw, 180px); height: auto; display: block; margin: 0 auto 1.5rem;
+            filter: drop-shadow(0 0 26px var(--mira-glow-strong));
+            animation: marca-float 5s ease-in-out infinite; }
+        .marca-fecho { width: clamp(96px, 13vw, 148px); height: auto; display: block; margin: 0 auto 1.75rem;
+            filter: drop-shadow(0 0 22px var(--mira-glow-strong));
+            animation: marca-float 5s ease-in-out infinite; }
+        @keyframes marca-float {
+            0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 10px var(--mira-glow-soft)); }
+            50% { transform: translateY(-8px); filter: drop-shadow(0 0 24px var(--mira-glow-strong)); }
+        }
+
+        /* Slides de imagem: moldura viva (glow pulsante + brilho deslizante, loop) */
+        .moldura-img { position: relative; border-radius: 12px; overflow: hidden;
+            border: 1px solid var(--mira-icon-border);
+            animation: moldura-glow 3.5s ease-in-out infinite; }
+        @keyframes moldura-glow {
+            0%, 100% { box-shadow: 0 0 18px var(--mira-glow-soft); }
+            50% { box-shadow: 0 0 42px var(--mira-glow-strong); }
+        }
+        .moldura-shine { position: absolute; inset: 0; pointer-events: none; border-radius: 12px;
+            background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.07) 46%, var(--mira-glow-soft) 50%, rgba(255,255,255,0.07) 54%, transparent 68%);
+            background-size: 250% 100%; animation: bar-flow 5.5s linear infinite; }
+
+        /* Grid de lacunas: ícones respiram em onda */
+        @keyframes icon-breathe {
+            0%, 100% { box-shadow: 0 0 0 0 var(--mira-glow-soft); }
+            50% { box-shadow: 0 0 24px 2px var(--mira-glow-strong); }
+        }
+        .icon-breathe { animation: icon-breathe 3.2s ease-in-out infinite; }
+
+        /* Barras de autonomia: brilho deslizando em loop */
+        @keyframes bar-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        .barra-autonomia {
+            background: linear-gradient(90deg, var(--mira-primary), var(--mira-accent-2), var(--mira-primary));
+            background-size: 200% 100%;
+            animation: bar-flow 3s linear infinite;
+        }
+
+        /* Respiração das barras (slide 7): largura indo e voltando, calma */
+        .autonomia-bar.respirando {
+            transform-origin: left center;
+            animation: bar-flow 3s linear infinite, barra-respira 6s ease-in-out infinite;
+        }
+        @keyframes barra-respira {
+            0%, 100% { transform: scaleX(1); }
+            50% { transform: scaleX(0.86); }
+        }
+
+        /* CTA: respiração radial */
+        .cta-breathe {
+            background: radial-gradient(ellipse at 50% 60%, var(--mira-glow-strong), transparent 65%);
+            animation: mira-pulse 4s ease-in-out infinite;
+        }
+
+        /* Tabelas: linha em destaque com barra alinhada e fundo que cobre a linha toda */
+        .row-destaque td { background: var(--mira-pill-bg); }
+        .row-destaque td:first-child {
+            border-left: 3px solid var(--mira-primary);
+            padding-left: 14px;
+            border-radius: 8px 0 0 8px;
+            animation: row-barra 3s ease-in-out infinite;
+        }
+        .row-destaque td:last-child { border-radius: 0 8px 8px 0; }
+        @keyframes row-barra {
+            0%, 100% { box-shadow: -4px 0 12px var(--mira-glow-soft); }
+            50% { box-shadow: -4px 0 24px var(--mira-glow-strong); }
+        }
+
+        /* Faixa de travas (segurança): shimmer contínuo */
+        .faixa-travas {
+            background: linear-gradient(90deg, var(--mira-pill-bg), var(--mira-icon-bg), var(--mira-pill-bg));
+            background-size: 200% 100%;
+            animation: bar-flow 4s linear infinite;
+        }
+
+        /* Manifesto final: gradiente deslizando */
+        .manifesto-grad {
+            background: linear-gradient(90deg, var(--mira-primary), var(--mira-accent-2), var(--mira-text), var(--mira-primary));
+            background-size: 300% 100%;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: mira-gradient-shift 8s ease-in-out infinite;
+        }
+
+        /* Zero dos critérios: pulso */
+        @keyframes zero-pulse {
+            0%, 100% { text-shadow: 0 0 0 var(--mira-glow-soft); }
+            50% { text-shadow: 0 0 28px var(--mira-glow-strong); }
+        }
+        .zero-pulse { animation: zero-pulse 2.6s ease-in-out infinite; }
+
+        /* === SLIDE 3D: rodízio dos quatro planos (todos alternam na frente; pausa no ponteiro, arrasto gira) === */
+        .stage3d { perspective: 1500px; width: 100%; max-width: 1080px; margin: 0 auto; touch-action: pan-y; cursor: grab; }
+        .stage3d:active { cursor: grabbing; }
+        .planos3d { position: relative; width: 100%; height: 500px; transform-style: preserve-3d; }
+        .plano3d {
+            position: absolute; left: 50%; top: 50%; width: min(660px, 92vw);
+            border-radius: 16px; padding: 20px 26px;
+            background: var(--mira-card-bg);
+            border: 1px solid var(--mira-card-border);
+            backdrop-filter: blur(6px);
+            box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+            transition: transform 1.15s cubic-bezier(0.45, 0, 0.25, 1), opacity 0.95s ease,
+                        background 0.8s ease, border-color 0.8s ease, box-shadow 0.8s ease;
+        }
+        .plano3d.frente {
+            border-color: var(--mira-icon-border); background: var(--mira-icon-bg);
+            box-shadow: 0 22px 60px var(--mira-glow-soft), 0 0 34px var(--mira-glow-soft);
+        }
+        .plano-inner { animation: mira-float 5.5s ease-in-out infinite; }
+        .plano3d:nth-child(2) .plano-inner { animation-delay: 0.5s; }
+        .plano3d:nth-child(3) .plano-inner { animation-delay: 1s; }
+        .plano3d:nth-child(4) .plano-inner { animation-delay: 1.5s; }
+        .plano3d h4 { font-size: 1.3rem; font-weight: 800; letter-spacing: 0.02em; }
+        .plano3d p { font-size: 0.95rem; color: var(--mira-text-soft); margin-top: 6px; line-height: 1.4; }
+        .plano-tag { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--mira-primary); font-weight: 700; }
+        @media (max-width: 640px) {
+            .planos3d { height: 420px; }
+            .plano3d { padding: 12px 16px; }
+            .plano3d h4 { font-size: 1rem; }
+            .plano3d p { font-size: 0.78rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Controles de slide: barra de progresso + botão flutuante "próximo" -->
+    <div id="mira-progress"></div>
+    <button id="mira-next" aria-label="Próximo slide">
+        <i data-lucide="chevron-down" class="w-6 h-6" id="mira-next-icon"></i>
+    </button>
+
+    <!-- ============ SLIDE 1: CAPA (manifesto, vídeo matrix) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">
+        <canvas id="capa-matrix" class="capa-matrix" aria-hidden="true"></canvas>
+        <div class="capa-overlay"></div>
+        <div class="capa-conteudo relative z-10 text-center max-w-4xl" data-aos="fade-up">
+            <img src="assets/marca-argo.png" alt="Marca do Projeto ARGO" class="marca-capa">
+            <p class="attribute-pill capa-selo inline-block px-5 py-2 text-sm tracking-widest uppercase text-soft mb-8">Pitch · Projeto ARGO v0.6</p>
+            <h1 class="text-5xl md:text-7xl font-black leading-tight mb-6">
+                <span class="block" style="text-wrap: balance;">A IA não governa a arquitetura.</span>
+                <span class="block primary-color" style="text-wrap: balance;">A arquitetura governa a IA.</span>
+            </h1>
+            <p class="text-lg md:text-xl text-soft max-w-2xl mx-auto mb-10">Arquitetura e Governança Orientadas por IA: o framework institucional de Harness Engineering para a SEI / DIGEO / CGEO.</p>
+            <div class="flex flex-wrap items-center justify-center gap-3 text-softer text-sm">
+                <span class="attribute-pill px-4 py-2"><i data-lucide="landmark" class="inline w-4 h-4 mr-2 primary-color"></i>SEI · DIGEO · CGEO</span>
+                <span class="attribute-pill px-4 py-2"><i data-lucide="calendar" class="inline w-4 h-4 mr-2 primary-color"></i>Outubro de 2026</span>
+                <span class="attribute-pill px-4 py-2"><i data-lucide="scroll-text" class="inline w-4 h-4 mr-2 primary-color"></i>Documento Base para Deliberação Gerencial</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 2: AS 6 LACUNAS ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="alert-triangle" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">6 lacunas entre a IA e o corporativo</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Um modelo isolado não nasce sabendo o que a instituição exige</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+            <div class="glass-card p-8" data-aos="zoom-in">
+                <div class="icon-hero mb-5 icon-breathe"><i data-lucide="landmark" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-xl font-bold mb-2">Regras institucionais</h3>
+                <p class="text-soft text-sm">Compliance, políticas e critérios de qualidade não vêm no modelo</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="100">
+                <div class="icon-hero mb-5 icon-breathe" style="animation-delay: 0.4s"><i data-lucide="server" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-xl font-bold mb-2">Arquitetura e legado</h3>
+                <p class="text-soft text-sm">Sistemas, integrações e decisões históricas ficam fora do contexto</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="200">
+                <div class="icon-hero mb-5 icon-breathe" style="animation-delay: 0.8s"><i data-lucide="lock" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-xl font-bold mb-2">Identidade e permissões</h3>
+                <p class="text-soft text-sm">Sem RBAC, sem ferramentas autorizadas, sem limites de ação</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="300">
+                <div class="icon-hero mb-5 icon-breathe" style="animation-delay: 1.2s"><i data-lucide="eye" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-xl font-bold mb-2">Auditoria</h3>
+                <p class="text-soft text-sm">Nenhum rastro de quem decidiu, com qual ferramenta e por quê</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="400">
+                <div class="icon-hero mb-5 icon-breathe" style="animation-delay: 1.6s"><i data-lucide="banknote" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-xl font-bold mb-2">Custos</h3>
+                <p class="text-soft text-sm">Consumo sem teto, sem FinOps, sem previsibilidade orçamentária</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="500">
+                <div class="icon-hero mb-5 icon-breathe" style="animation-delay: 2s"><i data-lucide="user-check" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-xl font-bold mb-2">Aprovação humana</h3>
+                <p class="text-soft text-sm">Ninguém no circuito quando a ação é crítica</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 3: DO COPILOTO AO HARNESS ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <h2 class="text-4xl md:text-5xl font-black">Do copiloto ao <span class="primary-color">harness</span></h2>
+            <p class="text-soft text-lg mt-3">A mesma IA, operando sob regras, gates e evidências</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8 w-full max-w-5xl items-stretch">
+            <div class="versus-a glass-card p-10 transition-all duration-700" data-aos="fade-right">
+                <div class="icon-hero mb-6"><i data-lucide="message-square" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-3xl font-bold mb-4">IA assistente</h3>
+                <ul class="space-y-3 text-soft">
+                    <li class="flex gap-3"><i data-lucide="x" class="primary-color w-5 h-5 shrink-0"></i> Resposta por resposta, sem contexto institucional</li>
+                    <li class="flex gap-3"><i data-lucide="x" class="primary-color w-5 h-5 shrink-0"></i> Risco invisível: nenhuma evidência do que foi feito</li>
+                    <li class="flex gap-3"><i data-lucide="x" class="primary-color w-5 h-5 shrink-0"></i> Adoção fragmentada, cada equipe por conta própria</li>
+                    <li class="flex gap-3"><i data-lucide="x" class="primary-color w-5 h-5 shrink-0"></i> Capacidade presa a uma ferramenta específica</li>
+                </ul>
+            </div>
+            <div class="versus-b glass-card p-10 transition-all duration-700" data-aos="fade-left">
+                <div class="icon-hero mb-6"><i data-lucide="shield-check" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-3xl font-bold mb-4">Harness Engineering</h3>
+                <ul class="space-y-3 text-soft">
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Agentes coordenados, com contexto e ferramentas autorizadas</li>
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Padrões, segurança e testes embutidos no ambiente</li>
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Evidência de identidade, política e resultado em cada ação</li>
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Governança reutilizável em múltiplas soluções</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 4: O HARNESS (D3) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-10" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="orbit" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">12 barreiras entre o modelo e o risco</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">O Harness ARGO: a camada operacional que envolve cada agente</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
+            <button class="replay-btn" onclick="window.__harnessReplay && window.__harnessReplay()">↻ replay</button>
+            <div id="harness-stage" class="anim-stage"></div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 5: QUATRO PLANOS (3D) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-8" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="layers" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">4 planos, 1 linha de autoridade</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">A inteligência institucional mora em Governance e Control; Execution e Observability executam e provam</p>
+        </div>
+        <div class="stage3d" id="stage3d" data-aos="zoom-in">
+            <div class="planos3d" id="planos3d">
+                <div class="plano3d"><div class="plano-inner">
+                    <p class="plano-tag">Define as regras</p>
+                    <h4>Governance Plane</h4>
+                    <p>Princípios e standards · ADRs e exceções · autoridade arquitetural</p>
+                </div></div>
+                <div class="plano3d"><div class="plano-inner">
+                    <p class="plano-tag">Aplica as regras</p>
+                    <h4>Control Plane</h4>
+                    <p>Policy as Code · autonomia A0-A5 · Quality Gates · aprovação humana</p>
+                </div></div>
+                <div class="plano3d"><div class="plano-inner">
+                    <p class="plano-tag">Os agentes executam</p>
+                    <h4>Execution Plane</h4>
+                    <p>Hermes baseline · Claude Code/CLI · Reversa (AS-IS) · BMAD (TO-BE) · tools e MCPs</p>
+                </div></div>
+                <div class="plano3d"><div class="plano-inner">
+                    <p class="plano-tag">Registra as evidências</p>
+                    <h4>Observability Plane</h4>
+                    <p>Evidence records · rastreabilidade ponta a ponta · FinOps · accountability</p>
+                </div></div>
+            </div>
+        </div>
+        <p class="text-sm text-soft mt-6">define regras <span class="primary-color">→</span> aplica regras <span class="primary-color">→</span> executa <span class="primary-color">→</span> registra evidências <span class="primary-color">· o feedback fecha o ciclo</span></p>
+        <p class="text-softer text-xs mt-2 tracking-widest uppercase">Cada plano vem à frente por vez · pare o ponteiro para ler · arraste para girar</p>
+    </section>
+
+    <!-- ============ SLIDE 6: A ARQUITETURA EM UMA TELA (imagem) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-8" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="compass" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">A arquitetura em uma tela</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Governance, Control, Execution e Observability: a linha de autoridade do ARGO</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-4 md:p-6" data-aos="zoom-in">
+            <div class="moldura-img">
+                <img src="assets/arquitetura-argo.png" alt="Diagrama oficial de arquitetura do Projeto ARGO" class="w-full rounded-lg block">
+                <div class="moldura-shine"></div>
+            </div>
+            <p class="text-softer text-xs mt-4 text-center">O diagrama oficial do relatório de concepção v0.6</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 7: AUTONOMIA A0-A5 ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="gauge" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">6 níveis de autonomia, zero atalhos</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Concedida por risco e contexto, nunca pela capacidade do modelo</p>
+        </div>
+        <div class="w-full max-w-4xl space-y-4">
+            <div class="glass-card p-5 flex items-center gap-5" data-aos="fade-right">
+                <span class="text-2xl font-black primary-color w-12 shrink-0">A0</span>
+                <div class="flex-1">
+                    <div class="flex justify-between text-sm mb-2"><span class="font-semibold">Consultivo</span><span class="text-softer">sem alteração</span></div>
+                    <div class="h-2.5 rounded-full overflow-hidden" style="background: var(--mira-pill-bg);"><div class="h-full rounded-full barra-autonomia autonomia-bar" data-w="16" style="width: 0%; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);"></div></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 flex items-center gap-5" data-aos="fade-right" data-aos-delay="100">
+                <span class="text-2xl font-black primary-color w-12 shrink-0">A1</span>
+                <div class="flex-1">
+                    <div class="flex justify-between text-sm mb-2"><span class="font-semibold">Produz artefatos</span><span class="text-softer">humano decide e executa</span></div>
+                    <div class="h-2.5 rounded-full overflow-hidden" style="background: var(--mira-pill-bg);"><div class="h-full rounded-full barra-autonomia autonomia-bar" data-w="30" style="width: 0%; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);"></div></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 flex items-center gap-5" data-aos="fade-right" data-aos-delay="200">
+                <span class="text-2xl font-black primary-color w-12 shrink-0">A2</span>
+                <div class="flex-1">
+                    <div class="flex justify-between text-sm mb-2"><span class="font-semibold">Escrita controlada</span><span class="text-softer">em desenvolvimento</span></div>
+                    <div class="h-2.5 rounded-full overflow-hidden" style="background: var(--mira-pill-bg);"><div class="h-full rounded-full barra-autonomia autonomia-bar" data-w="45" style="width: 0%; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);"></div></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 flex items-center gap-5" data-aos="fade-right" data-aos-delay="300">
+                <span class="text-2xl font-black primary-color w-12 shrink-0">A3</span>
+                <div class="flex-1">
+                    <div class="flex justify-between text-sm mb-2"><span class="font-semibold">Gates obrigatórios</span><span class="text-softer">aprovação antes de avançar</span></div>
+                    <div class="h-2.5 rounded-full overflow-hidden" style="background: var(--mira-pill-bg);"><div class="h-full rounded-full barra-autonomia autonomia-bar" data-w="60" style="width: 0%; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);"></div></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 flex items-center gap-5" data-aos="fade-right" data-aos-delay="400">
+                <span class="text-2xl font-black primary-color w-12 shrink-0">A4</span>
+                <div class="flex-1">
+                    <div class="flex justify-between text-sm mb-2"><span class="font-semibold">Autonomia restrita</span><span class="text-softer">por políticas pré-aprovadas</span></div>
+                    <div class="h-2.5 rounded-full overflow-hidden" style="background: var(--mira-pill-bg);"><div class="h-full rounded-full barra-autonomia autonomia-bar" data-w="78" style="width: 0%; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);"></div></div>
+                </div>
+            </div>
+            <div class="glass-card p-5 flex items-center gap-5" data-aos="fade-right" data-aos-delay="500">
+                <span class="text-2xl font-black primary-color w-12 shrink-0">A5</span>
+                <div class="flex-1">
+                    <div class="flex justify-between text-sm mb-2"><span class="font-semibold">Ação privilegiada</span><span class="text-softer">aprovação explícita e auditoria reforçada</span></div>
+                    <div class="h-2.5 rounded-full overflow-hidden" style="background: var(--mira-pill-bg);"><div class="h-full rounded-full barra-autonomia autonomia-bar" data-w="95" style="width: 0%; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);"></div></div>
+                </div>
+            </div>
+        </div>
+        <p class="text-softer text-sm mt-6 max-w-3xl mx-auto text-center" data-aos="fade-up"><i data-lucide="info" class="inline w-4 h-4 mr-1 primary-color"></i>A regra de ouro: autonomia se concede pelo risco da tarefa, nunca pela capacidade do modelo. Se ele é bom, não significa que pode tudo.</p>
+    </section>
+
+    <!-- ============ SLIDE 8: O PEDIDO (CTA) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">
+        <div class="cta-breathe absolute inset-0 pointer-events-none"></div>
+        <div class="relative z-10 text-center max-w-3xl" data-aos="zoom-in">
+            <div class="icon-hero mx-auto mb-8" style="width:72px;height:72px;border-radius:20px;">
+                <i data-lucide="flask-conical" class="primary-color w-9 h-9"></i>
+            </div>
+            <h2 class="text-4xl md:text-6xl font-black mb-6" style="text-wrap: balance;">Autorize a <span class="primary-color">PoC controlada</span></h2>
+            <p class="text-lg md:text-xl text-soft mb-8">Iniciativa experimental sob governança, conforme a Baseline Técnica ARGO v0.6.1.</p>
+            <p class="text-soft mb-10 max-w-xl mx-auto">Sem compromisso prévio de tecnologia, fornecedor ou desenvolvimento próprio. A PoC produz as evidências; as evidências sustentam as próximas decisões.</p>
+            <div class="flex flex-wrap items-center justify-center gap-4">
+                <span class="attribute-pill px-6 py-3 text-base" style="border-color: var(--mira-icon-border); background: var(--mira-icon-bg);"><i data-lucide="check" class="inline w-4 h-4 mr-2 primary-color"></i>Aprovar a PoC</span>
+                <span class="attribute-pill px-6 py-3 text-base"><i data-lucide="file-text" class="inline w-4 h-4 mr-2 primary-color"></i>Baseline v0.6.1</span>
+                <span class="attribute-pill px-6 py-3 text-base"><i data-lucide="shield" class="inline w-4 h-4 mr-2 primary-color"></i>Risco controlado</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 9: CLASSES DE REGRA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="scale" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">Proibido, inegociável, preferencial, contextual</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Princípios fortes podem ser obrigatórios; tecnologia é meio, não fim</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-6 md:p-8 overflow-x-auto" data-aos="fade-up">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-softer text-xs uppercase tracking-widest">
+                        <th class="pb-4 pr-6 font-semibold">Classe</th>
+                        <th class="pb-4 pr-6 font-semibold">O que significa</th>
+                        <th class="pb-4 font-semibold">Exemplo</th>
+                    </tr>
+                </thead>
+                <tbody class="text-soft">
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-4 pr-6 font-bold primary-color whitespace-nowrap">PROIBIDO</td>
+                        <td class="py-4 pr-6">Não pode ocorrer, em nenhum contexto</td>
+                        <td class="py-4">Exposição de secrets, execução destrutiva sem aprovação</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-4 pr-6 font-bold primary-color whitespace-nowrap">INEGOCIÁVEL</td>
+                        <td class="py-4 pr-6">Princípio obrigatório</td>
+                        <td class="py-4">Aprovação humana em ação crítica; evidência de cada decisão</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-4 pr-6 font-bold primary-color whitespace-nowrap">PREFERENCIAL</td>
+                        <td class="py-4 pr-6">Padrão recomendado, com exceção justificada</td>
+                        <td class="py-4">Pipelines de teste automatizados no fluxo</td>
+                    </tr>
+                    <tr class="border-t row-destaque" style="border-color: var(--mira-card-border);">
+                        <td class="py-4 pr-6 font-bold primary-color whitespace-nowrap">CONTEXTUAL</td>
+                        <td class="py-4 pr-6">Depende do problema e do contexto</td>
+                        <td class="py-4">Microserviços, Kubernetes, vector database, RAG</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-softer text-sm mt-6"><i data-lucide="info" class="inline w-4 h-4 mr-1 primary-color"></i>Nenhuma tecnologia é dogma no ARGO.</p>
+    </section>
+
+    <!-- ============ SLIDE 10: ARCHITECTURE FITNESS (D3) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-10" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="recycle" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">O legado vira evidência, não palpite</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Architecture Fitness com Reversa: o ciclo contínuo de descoberta e modernização</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
+            <button class="replay-btn" onclick="window.__cicloReplay && window.__cicloReplay()">↻ replay</button>
+            <div id="ciclo-stage" class="anim-stage"></div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 11: BUILD VS. ADOPT ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <h2 class="text-4xl md:text-5xl font-black">Adotar primeiro, <span class="primary-color">construir só com prova</span></h2>
+            <p class="text-soft text-lg mt-3">Decision Gate Build vs. Adopt: desenvolvimento próprio é uma decisão de produto</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8 w-full max-w-5xl items-stretch">
+            <div class="versus-a glass-card p-10 transition-all duration-700" data-aos="fade-right">
+                <div class="icon-hero mb-6"><i data-lucide="package-check" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-3xl font-bold mb-4">Adotar e comparar</h3>
+                <ul class="space-y-3 text-soft">
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Hermes serve como baseline inicial de orquestração</li>
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Orchestration Contract define a fronteira antes da ferramenta</li>
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Alternativas comparadas com o mesmo caso de uso</li>
+                    <li class="flex gap-3"><i data-lucide="check" class="primary-color w-5 h-5 shrink-0"></i> Decisão registrada em ADR</li>
+                </ul>
+            </div>
+            <div class="versus-b glass-card p-10 transition-all duration-700" data-aos="fade-left">
+                <div class="icon-hero mb-6"><i data-lucide="hammer" class="primary-color w-6 h-6"></i></div>
+                <h3 class="text-3xl font-bold mb-4">Construir, só com prova</h3>
+                <ul class="space-y-3 text-soft">
+                    <li class="flex gap-3"><i data-lucide="alert-triangle" class="primary-color w-5 h-5 shrink-0"></i> Assume produto inteiro: estado, contexto, memória, filas, retries</li>
+                    <li class="flex gap-3"><i data-lucide="alert-triangle" class="primary-color w-5 h-5 shrink-0"></i> Segurança, observabilidade e atualização viram sua conta</li>
+                    <li class="flex gap-3"><i data-lucide="alert-triangle" class="primary-color w-5 h-5 shrink-0"></i> Suporte de longo prazo entra no radar da equipe</li>
+                    <li class="flex gap-3"><i data-lucide="alert-triangle" class="primary-color w-5 h-5 shrink-0"></i> Só quando evidências e Business Case justificarem</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 12: ECOSSISTEMA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="boxes" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">8 alternativas, 1 critério: substituibilidade</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Comparadas com o mesmo caso de uso; decisão registrada em ADR</p>
+        </div>
+        <div class="glass-card w-full max-w-4xl p-6 md:p-8 overflow-x-auto" data-aos="fade-up">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-softer text-xs uppercase tracking-widest">
+                        <th class="pb-4 pr-6 font-semibold">Alternativa</th>
+                        <th class="pb-4 font-semibold">Papel no estudo</th>
+                    </tr>
+                </thead>
+                <tbody class="text-soft">
+                    <tr class="border-t row-destaque" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-bold primary-color whitespace-nowrap">Hermes</td>
+                        <td class="py-3.5">Baseline atual de orquestração</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-semibold whitespace-nowrap">LangGraph / Deep Agents</td>
+                        <td class="py-3.5">Runtime controlável e harness de alto nível</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-semibold whitespace-nowrap">Microsoft Agent Framework</td>
+                        <td class="py-3.5">Referência corporativa</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-semibold whitespace-nowrap">CrewAI</td>
+                        <td class="py-3.5">Experimentação multiagente</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-semibold whitespace-nowrap">OpenAI Agents SDK</td>
+                        <td class="py-3.5">Avaliação SDK-first</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-semibold whitespace-nowrap">Claude Agent SDK</td>
+                        <td class="py-3.5">Integração programática com o ecossistema Claude</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-semibold whitespace-nowrap">Google ADK</td>
+                        <td class="py-3.5">Referência adicional</td>
+                    </tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);">
+                        <td class="py-3.5 pr-6 font-semibold whitespace-nowrap">LlamaIndex Workflows</td>
+                        <td class="py-3.5">Componente especializado em dados e RAG</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 13: SEGURANÇA ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="shield-alert" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">9 ameaças, 3 travas de fábrica</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Ameaças modeladas na proposta; controles embutidos na Baseline v0.6.1</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-5xl">
+            <div class="glass-card p-5" data-aos="zoom-in"><i data-lucide="bug" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Prompt injection</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="50"><i data-lucide="syringe" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Tool poisoning</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="100"><i data-lucide="cloud-upload" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Exfiltração de dados</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="150"><i data-lucide="key-round" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Secrets expostos</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="200"><i data-lucide="chevrons-up" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Escalada de privilégios</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="250"><i data-lucide="zap-off" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Execução destrutiva</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="300"><i data-lucide="package" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Supply chain</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="350"><i data-lucide="infinity" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">Loops sem controle</p></div>
+            <div class="glass-card p-5" data-aos="zoom-in" data-aos-delay="400"><i data-lucide="shield" class="primary-color w-5 h-5 mb-3"></i><p class="text-sm font-semibold">MCPs privilegiados</p></div>
+        </div>
+        <div class="faixa-travas rounded-xl border w-full max-w-5xl mt-8 p-5 md:p-6" style="border-color: var(--mira-icon-border);" data-aos="fade-up" data-aos-delay="450">
+            <p class="text-xs uppercase tracking-widest text-softer text-center mb-4">Travas da Baseline v0.6.1</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="text-center">
+                    <p class="text-sm font-semibold mb-1"><i data-lucide="badge-check" class="inline w-4 h-4 mr-2 primary-color"></i>Conformance Suite</p>
+                    <p class="text-xs text-soft">verificação automática: tudo o que a IA entrega precisa passar pelos testes de conformidade</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm font-semibold mb-1"><i data-lucide="wallet" class="inline w-4 h-4 mr-2 primary-color"></i>Budget Envelope</p>
+                    <p class="text-xs text-soft">teto de custo por execução: estourou o orçamento, a ação para</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm font-semibold mb-1"><i data-lucide="route" class="inline w-4 h-4 mr-2 primary-color"></i>Model Routing</p>
+                    <p class="text-xs text-soft">o modelo certo para cada tarefa, escolhido por custo e capacidade</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 14: RISCOS E MITIGAÇÕES ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="umbrella" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">9 riscos, 9 mitigações, <span class="primary-color">0 surpresas</span></h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Cada risco tem uma resposta desenhada no modelo</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-6 md:p-8 overflow-x-auto" data-aos="fade-up">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="text-softer text-xs uppercase tracking-widest">
+                        <th class="pb-4 pr-6 font-semibold">Risco</th>
+                        <th class="pb-4 font-semibold">Mitigação</th>
+                    </tr>
+                </thead>
+                <tbody class="text-soft">
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Institucionalizar erros do legado</td><td class="py-3 primary-color font-semibold">Reversa produz evidência, não norma</td></tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Excesso de rigidez</td><td class="py-3 primary-color font-semibold">Classes de regra com exceções justificadas</td></tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Overengineering</td><td class="py-3 primary-color font-semibold">Não impor tecnologia sem necessidade</td></tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Lock-in</td><td class="py-3 primary-color font-semibold">Contratos e componentes substituíveis</td></tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Infraestrutura própria prematura</td><td class="py-3 primary-color font-semibold">Decision Gate Build vs. Adopt</td></tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Autonomia excessiva</td><td class="py-3 primary-color font-semibold">Níveis A0-A5, menor privilégio, human-in-the-loop</td></tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Documentação sem execução</td><td class="py-3 primary-color font-semibold">Policy as Code e Quality Gates</td></tr>
+                    <tr class="border-t" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Custo imprevisível</td><td class="py-3 primary-color font-semibold">FinOps, Budget Envelope e Model Routing</td></tr>
+                    <tr class="border-t row-destaque" style="border-color: var(--mira-card-border);"><td class="py-3 pr-6">Evidência insuficiente</td><td class="py-3 primary-color font-semibold">Evidence by Design e rastreabilidade</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 15: IMPLANTAÇÃO (TIMELINE) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-10" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="route" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">Da aprovação à deliberação em 6 passos</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Piloto em sistema CGEO de risco controlável; decisão final baseada em evidência</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-8 relative" data-aos="fade-up">
+            <button class="replay-btn" onclick="window.__implantaReplay && window.__implantaReplay()">↻ replay</button>
+            <div id="implanta-stage" class="anim-stage"></div>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 16: O ARGO EM UMA TELA (infográfico) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-8" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="layout-dashboard" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">O ARGO em uma tela</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Quatro pilares ao redor do selo: governança, autonomia progressiva, evidência por design e substituibilidade</p>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-4 md:p-6" data-aos="zoom-in">
+            <div class="moldura-img">
+                <img src="assets/infografico-argo.png" alt="Infográfico oficial do Projeto ARGO" class="w-full rounded-lg block">
+                <div class="moldura-shine"></div>
+            </div>
+            <p class="text-softer text-xs mt-4 text-center">O infográfico oficial do projeto, com a marca ARGO ao centro</p>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 17: RESULTADOS ESPERADOS ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="sparkles" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">Os resultados esperados</h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Seis ganhos com o Harness ARGO, com os ícones do infográfico oficial</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+            <div class="glass-card p-8" data-aos="zoom-in">
+                <img src="assets/res-1.png" alt="Ícone de qualidade de código" class="w-14 h-14 rounded-xl mb-5 icon-breathe">
+                <h3 class="text-xl font-bold mb-2">Maior qualidade de código</h3>
+                <p class="text-soft text-sm">Menos defeitos, mais segurança e conformidade</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="100">
+                <img src="assets/res-2.png" alt="Ícone de escala sustentável" class="w-14 h-14 rounded-xl mb-5 icon-breathe" style="animation-delay: 0.4s">
+                <h3 class="text-xl font-bold mb-2">Escala sustentável</h3>
+                <p class="text-soft text-sm">Aceleração com controle e consistência</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="200">
+                <img src="assets/res-3.png" alt="Ícone de governança efetiva" class="w-14 h-14 rounded-xl mb-5 icon-breathe" style="animation-delay: 0.8s">
+                <h3 class="text-xl font-bold mb-2">Governança efetiva</h3>
+                <p class="text-soft text-sm">Políticas, rastreabilidade e auditoria</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="300">
+                <img src="assets/res-4.png" alt="Ícone de conhecimento institucional" class="w-14 h-14 rounded-xl mb-5 icon-breathe" style="animation-delay: 1.2s">
+                <h3 class="text-xl font-bold mb-2">Conhecimento institucional</h3>
+                <p class="text-soft text-sm">Padrões e contexto da casa no centro da geração de software</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="400">
+                <img src="assets/res-5.png" alt="Ícone de uso responsável de IA" class="w-14 h-14 rounded-xl mb-5 icon-breathe" style="animation-delay: 1.6s">
+                <h3 class="text-xl font-bold mb-2">Uso responsável de IA</h3>
+                <p class="text-soft text-sm">Autonomia adequada com supervisão humana</p>
+            </div>
+            <div class="glass-card p-8" data-aos="zoom-in" data-aos-delay="500">
+                <img src="assets/res-6.png" alt="Ícone de valor público" class="w-14 h-14 rounded-xl mb-5 icon-breathe" style="animation-delay: 2s">
+                <h3 class="text-xl font-bold mb-2">Valor público</h3>
+                <p class="text-soft text-sm">Mais eficiência e transparência, com redução de riscos</p>
+            </div>
+        </div>
+        <p class="text-softer text-sm mt-6 max-w-3xl mx-auto text-center" data-aos="fade-up"><i data-lucide="info" class="inline w-4 h-4 mr-1 primary-color"></i>Próximo passo, direto do infográfico: validar na PoC os controles, processos e métricas em ambiente não produtivo.</p>
+    </section>
+
+    <!-- ============ SLIDE 18: CRITÉRIOS DE SUCESSO ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 py-16">
+        <div class="text-center mb-12" data-aos="fade-up">
+            <div class="flex items-center justify-center gap-4">
+                <div class="icon-hero"><i data-lucide="target" class="primary-color w-6 h-6"></i></div>
+                <h2 class="text-4xl md:text-5xl font-black">Sucesso tem número: <span class="primary-color">100% dos P0</span></h2>
+            </div>
+            <p class="text-soft text-lg mt-3">Critérios objetivos da PoC, mensuráveis ponta a ponta</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mb-8">
+            <div class="glass-card p-8 text-center relative overflow-hidden" data-aos="zoom-in">
+                <svg class="metric-ring absolute -top-10 -right-10 w-32 h-32 opacity-30" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--mira-primary)" stroke-width="2" stroke-dasharray="60 200" stroke-linecap="round"></circle>
+                </svg>
+                <p class="metric-value text-6xl font-black primary-color" data-target="100" data-suffix="%">0</p>
+                <p class="text-soft mt-3">dos requisitos críticos P0 atendidos</p>
+            </div>
+            <div class="glass-card p-8 text-center relative overflow-hidden" data-aos="zoom-in" data-aos-delay="150">
+                <svg class="metric-ring absolute -top-10 -right-10 w-32 h-32 opacity-30" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--mira-primary)" stroke-width="2" stroke-dasharray="60 200" stroke-linecap="round"></circle>
+                </svg>
+                <p class="text-6xl font-black primary-color zero-pulse">0</p>
+                <p class="text-soft mt-3">secrets expostos durante a PoC</p>
+            </div>
+            <div class="glass-card p-8 text-center relative overflow-hidden" data-aos="zoom-in" data-aos-delay="300">
+                <svg class="metric-ring absolute -top-10 -right-10 w-32 h-32 opacity-30" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="var(--mira-primary)" stroke-width="2" stroke-dasharray="60 200" stroke-linecap="round"></circle>
+                </svg>
+                <p class="text-6xl font-black primary-color zero-pulse" style="animation-delay: 1.3s;">0</p>
+                <p class="text-soft mt-3">ações executadas fora da policy</p>
+            </div>
+        </div>
+        <div class="glass-card w-full max-w-5xl p-6 md:p-8" data-aos="fade-up" data-aos-delay="200">
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3 text-soft text-sm">
+                <li class="flex gap-3"><i data-lucide="check" class="primary-color w-4 h-4 shrink-0 mt-0.5"></i> Rastreabilidade ponta a ponta de cada ação</li>
+                <li class="flex gap-3"><i data-lucide="check" class="primary-color w-4 h-4 shrink-0 mt-0.5"></i> Evidências auditáveis de identidade e aprovação</li>
+                <li class="flex gap-3"><i data-lucide="check" class="primary-color w-4 h-4 shrink-0 mt-0.5"></i> Custo mensurável do ciclo completo</li>
+                <li class="flex gap-3"><i data-lucide="check" class="primary-color w-4 h-4 shrink-0 mt-0.5"></i> Capacidade de substituição prevista e testada</li>
+                <li class="flex gap-3"><i data-lucide="check" class="primary-color w-4 h-4 shrink-0 mt-0.5"></i> Dados suficientes para decidir Build, Adopt ou Extend</li>
+                <li class="flex gap-3"><i data-lucide="check" class="primary-color w-4 h-4 shrink-0 mt-0.5"></i> Validação técnica em sistema real da CGEO</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ============ SLIDE 19: DELIBERAÇÃO (FECHO) ============ -->
+    <section class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">
+        <div class="cta-breathe absolute inset-0 pointer-events-none"></div>
+        <div class="relative z-10 text-center max-w-3xl" data-aos="zoom-in">
+            <img src="assets/marca-argo.png" alt="Marca do Projeto ARGO" class="marca-fecho">
+            <h2 class="text-4xl md:text-6xl font-black mb-6" style="text-wrap: balance;">A decisão de hoje: <span class="primary-color">autorizar o experimento</span></h2>
+            <p class="text-lg text-soft mb-8 max-w-2xl mx-auto">Aprovação do Projeto ARGO como iniciativa experimental da SEI / DIGEO / CGEO, autorizando a execução de uma Prova de Conceito controlada, conforme a Baseline Técnica ARGO v0.6.1, sem compromisso prévio de adoção definitiva de tecnologia, fornecedor ou desenvolvimento próprio.</p>
+            <div class="flex flex-wrap items-center justify-center gap-4 mb-12">
+                <span class="attribute-pill px-6 py-3 text-base" style="border-color: var(--mira-icon-border); background: var(--mira-icon-bg);"><i data-lucide="check" class="inline w-4 h-4 mr-2 primary-color"></i>Aprovar a PoC controlada</span>
+                <span class="attribute-pill px-6 py-3 text-base"><i data-lucide="file-text" class="inline w-4 h-4 mr-2 primary-color"></i>Deliberação: seção 25 da proposta</span>
+            </div>
+            <p class="text-2xl md:text-3xl font-black manifesto-grad leading-snug" style="text-wrap: balance;">A IA não governa a arquitetura; a arquitetura governa a IA.</p>
+            <p class="text-softer mt-12 text-xs tracking-widest uppercase">Projeto ARGO · Documento Base para Deliberação Gerencial · Outubro de 2026</p>
+        </div>
+    </section>
+
+    <script>
+        AOS.init({ duration: 800, once: true });
+        lucide.createIcons();
+        const PRIMARY = getComputedStyle(document.documentElement).getPropertyValue('--mira-primary').trim();
+
+        // CAPA: cascata matrix clássica, binários descendo (canvas em loop perpétuo; pausa fora de vista)
+        (function () {
+            const canvas = document.getElementById('capa-matrix');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const VERDE = '#00FF41';   // verde matrix clássico (escolha do usuário)
+            const CABECA = '#D2FFDD';  // glifo da cabeça, quase branco
+            let cols = [], w = 0, h = 0, FS = 18, timer = null;
+
+            function medir() {
+                const dpr = window.devicePixelRatio || 1;
+                w = canvas.width = Math.ceil(canvas.offsetWidth * dpr);
+                h = canvas.height = Math.ceil(canvas.offsetHeight * dpr);
+                FS = Math.max(14, Math.round(18 * dpr));
+                cols = Array.from({ length: Math.ceil(w / FS) }, () => ({
+                    y: Math.random() * -h,
+                    v: (0.55 + Math.random() * 0.9) * FS
+                }));
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, w, h);
+            }
+            function tick() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.09)'; // esmaece o rastro a cada passo
+                ctx.fillRect(0, 0, w, h);
+                ctx.font = '700 ' + FS + 'px "Courier New", monospace';
+                cols.forEach((c, i) => {
+                    const x = i * FS;
+                    ctx.fillStyle = CABECA;
+                    ctx.fillText(Math.random() < 0.5 ? '0' : '1', x, c.y);
+                    ctx.fillStyle = VERDE;
+                    ctx.fillText(Math.random() < 0.5 ? '0' : '1', x, c.y - FS);
+                    c.y += c.v;
+                    if (c.y - FS * 14 > h) { c.y = Math.random() * -FS * 6; c.v = (0.55 + Math.random() * 0.9) * FS; }
+                });
+            }
+            function ligar() { if (!timer) { medir(); timer = setInterval(tick, 55); } }
+            function desligar() { clearInterval(timer); timer = null; }
+            window.addEventListener('resize', () => { if (timer) medir(); });
+            const io = new IntersectionObserver((es) => es.forEach(e => e.isIntersecting ? ligar() : desligar()), { threshold: 0.05 });
+            io.observe(canvas);
+        })();
+
+        // SLIDE 3 + 10: spotlight alternado entre colunas (loop)
+        document.querySelectorAll('.versus-a').forEach((a) => {
+            const b = a.parentElement.querySelector('.versus-b');
+            if (!b) return;
+            let turn = true;
+            setInterval(() => {
+                const on = turn ? a : b, off = turn ? b : a;
+                on.style.transform = 'translateY(-8px) scale(1.02)';
+                on.style.boxShadow = '0 20px 50px var(--mira-glow-strong)';
+                off.style.transform = 'none';
+                off.style.boxShadow = '0 10px 30px var(--mira-glow-soft)';
+                turn = !turn;
+            }, 2500);
+        });
+
+        // SLIDE 4: harness, 12 controles orbitando o agente (entrada + loop perpétuo)
+        (function () {
+            const CAPS = ['Context Engineering', 'Guardrails', 'Skills', 'MCP / Tools', 'Identidade / RBAC', 'Policy as Code', 'Quality Gates', 'Testes', 'Observabilidade', 'Evidence by Design', 'FinOps', 'Human-in-the-loop'];
+            const W = 960, H = 540, cx = W / 2, cy = H / 2, R = 210;
+            const svg = d3.select('#harness-stage').append('svg').attr('viewBox', '150 30 660 480');
+
+            const nucleus = svg.append('g').attr('transform', `translate(${cx},${cy})`);
+            nucleus.append('circle').attr('class', 'h-nuc').attr('r', 0)
+                .attr('fill', 'rgba(255,255,255,0.05)').attr('stroke', PRIMARY).attr('stroke-width', 2);
+            nucleus.append('text').attr('class', 'h-nuc-t').text('Agente IA').attr('text-anchor', 'middle').attr('dy', 5)
+                .attr('fill', PRIMARY).attr('font-size', 20).attr('font-weight', 800).attr('opacity', 0);
+            nucleus.append('text').text('substituível').attr('text-anchor', 'middle').attr('dy', 26)
+                .attr('fill', 'rgba(255,255,255,0.45)').attr('font-size', 12).attr('opacity', 0)
+                .transition().delay(1600).duration(600).attr('opacity', 1);
+
+            const links = svg.selectAll('line.h-link').data(CAPS).join('line')
+                .attr('stroke', 'rgba(255,255,255,0.10)').attr('stroke-width', 1).attr('opacity', 0);
+            const nodes = svg.selectAll('g.h-node').data(CAPS).join('g');
+            nodes.append('circle').attr('class', 'h-dot').attr('r', 0).attr('fill', 'rgba(255,255,255,0.06)')
+                .attr('stroke', PRIMARY).attr('stroke-width', 1.5);
+            nodes.append('text').attr('class', 'h-label').text(d => d).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.78)').attr('font-size', 13.5).attr('font-weight', 600).attr('opacity', 0);
+
+            let angle = -Math.PI / 2;
+            const orbitOn = { v: false };
+
+            function draw(t) {
+                const positions = CAPS.map((d, i) => {
+                    const a = angle + (i / CAPS.length) * Math.PI * 2;
+                    return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R * 0.78, a, i };
+                });
+                nodes.attr('transform', d => {
+                    const p = positions[CAPS.indexOf(d)];
+                    return `translate(${p.x},${p.y})`;
+                });
+                nodes.select('circle.h-dot').attr('transform', 'translate(0,-14)');
+                nodes.select('text.h-label').attr('transform', 'translate(0,14)');
+                links.attr('x1', cx).attr('y1', cy)
+                    .attr('x2', d => positions[CAPS.indexOf(d)].x)
+                    .attr('y2', d => positions[CAPS.indexOf(d)].y);
+                // onda de brilho percorrendo a órbita
+                nodes.select('circle.h-dot').attr('stroke-opacity', d => {
+                    const p = positions[CAPS.indexOf(d)];
+                    return 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(p.a - angle * 2));
+                });
+            }
+
+            function entrada() {
+                angle = -Math.PI / 2;
+                nodes.attr('transform', `translate(${cx},${cy})`).attr('opacity', 1);
+                nucleus.select('.h-nuc').transition().duration(700).ease(d3.easeBackOut).attr('r', 56);
+                nucleus.select('.h-nuc-t').transition().delay(500).duration(500).attr('opacity', 1);
+                nodes.select('circle.h-dot').transition().delay((d, i) => 400 + i * 90).duration(600).ease(d3.easeBackOut).attr('r', 12);
+                nodes.select('text.h-label').transition().delay((d, i) => 600 + i * 90).duration(500).attr('opacity', 1);
+                links.transition().delay((d, i) => 500 + i * 90).duration(500).attr('opacity', 1);
+                setTimeout(() => { orbitOn.v = true; }, 1600);
+            }
+            entrada();
+            window.__harnessReplay = () => { orbitOn.v = false; entrada(); };
+
+            d3.timer((elapsed) => {
+                if (orbitOn.v) angle += 0.0032;
+                nucleus.select('.h-nuc').attr('r', 56 + 3 * Math.sin(elapsed / 600));
+                draw(elapsed);
+            });
+        })();
+
+        // SLIDE 5: rodízio 3D dos quatro planos (todos alternam na frente; pausa no ponteiro, arrasto gira)
+        (function () {
+            const stage = document.getElementById('stage3d');
+            const planos = document.getElementById('planos3d');
+            const cards = Array.from(planos.querySelectorAll('.plano3d'));
+
+            function slots() {
+                const lateral = Math.min(280, stage.clientWidth * 0.36);
+                return [
+                    { dx: 0, z: 300, ty: -48, s: 1.0, o: 1.0 },       // frente: legível e em destaque
+                    { dx: lateral, z: 40, ty: -100, s: 0.78, o: 0.45 },  // direita
+                    { dx: 0, z: -240, ty: -132, s: 0.6, o: 0.18 },    // fundo
+                    { dx: -lateral, z: 40, ty: -100, s: 0.78, o: 0.45 }  // esquerda
+                ];
+            }
+            let ordem = [0, 1, 2, 3];
+            let pausado = false;
+
+            function render() {
+                const S = slots();
+                cards.forEach((c, i) => {
+                    const sl = S[ordem[i]];
+                    c.style.transform = `translateX(calc(-50% + ${sl.dx}px)) translateZ(${sl.z}px) translateY(${sl.ty}px) scale(${sl.s})`;
+                    c.style.opacity = sl.o;
+                    c.classList.toggle('frente', ordem[i] === 0);
+                });
+            }
+            function roda(dir) {
+                const d = dir === -1 ? 3 : 1;
+                ordem = ordem.map(s => (s + d) % 4);
+                render();
+            }
+
+            // entrada: os planos surgem do fundo e assumem os postos iniciais
+            cards.forEach(c => {
+                c.style.transition = 'none';
+                c.style.opacity = '0';
+                c.style.transform = 'translateX(-50%) translateZ(-520px) scale(0.5)';
+            });
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                cards.forEach(c => { c.style.transition = ''; });
+                render();
+            }));
+
+            // rodízio perpétuo: cada plano vem à frente por vez
+            setInterval(() => { if (!pausado) roda(1); }, 3600);
+
+            // ponteiro sobre o palco pausa o rodízio (para ler); arrasto gira um passo por vez
+            let lastX = null, acum = 0;
+            stage.addEventListener('pointerenter', () => { pausado = true; });
+            stage.addEventListener('pointerleave', () => { pausado = false; lastX = null; });
+            stage.addEventListener('pointerdown', (e) => { pausado = true; lastX = e.clientX; acum = 0; stage.setPointerCapture(e.pointerId); });
+            stage.addEventListener('pointermove', (e) => {
+                if (lastX === null) return;
+                acum += e.clientX - lastX; lastX = e.clientX;
+                if (acum > 70) { roda(1); acum = 0; }
+                else if (acum < -70) { roda(-1); acum = 0; }
+            });
+            const solta = () => { lastX = null; };
+            stage.addEventListener('pointerup', solta);
+            stage.addEventListener('pointercancel', solta);
+        })();
+
+        // SLIDE 7: barras de autonomia crescem do zero a cada visita ao slide e depois respiram
+        (function () {
+            const bars = document.querySelectorAll('.autonomia-bar');
+            const TRANS = 'width 1.2s cubic-bezier(0.22, 1, 0.36, 1)';
+            function crescer() {
+                bars.forEach((bar, i) => {
+                    bar.classList.remove('respirando');
+                    bar.style.transition = 'none';
+                    bar.style.width = '0%';
+                    void bar.offsetWidth; // cristaliza o zero antes de religar a transição
+                    bar.style.transition = TRANS;
+                    setTimeout(() => {
+                        bar.style.width = bar.dataset.w + '%';
+                        // após a entrada, liga a respiração em onda (A0 → A5)
+                        setTimeout(() => {
+                            bar.classList.add('respirando');
+                            bar.style.animationDelay = (i * 0.55) + 's';
+                        }, 1350);
+                    }, 120 + i * 140);
+                });
+            }
+            function zerar() {
+                bars.forEach(bar => {
+                    bar.style.transition = 'none';
+                    bar.style.width = '0%';
+                    bar.classList.remove('respirando');
+                });
+            }
+            const sec = bars.length ? bars[0].closest('section') : null;
+            if (!sec) return;
+            const io = new IntersectionObserver((es) => es.forEach(e => e.isIntersecting ? crescer() : zerar()), { threshold: 0.35 });
+            io.observe(sec);
+        })();
+
+        // SLIDE 9: ciclo Architecture Fitness (entrada + partícula em loop perpétuo)
+        (function () {
+            const ETAPAS = ['Minerar', 'Comparar', 'Priorizar', 'Modernizar', 'Validar', 'Reminerar'];
+            const W = 960, H = 540, cx = W / 2, cy = H / 2, R = 175;
+            const svg = d3.select('#ciclo-stage').append('svg').attr('viewBox', '190 55 580 430');
+
+            const anel = svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', R)
+                .attr('fill', 'none').attr('stroke', 'rgba(255,255,255,0.12)').attr('stroke-width', 2)
+                .attr('stroke-dasharray', '6 10');
+
+            const center = svg.append('g').attr('transform', `translate(${cx},${cy})`).attr('opacity', 0);
+            center.append('text').text('evidência,').attr('text-anchor', 'middle').attr('dy', -4)
+                .attr('fill', PRIMARY).attr('font-size', 22).attr('font-weight', 800);
+            center.append('text').text('não norma').attr('text-anchor', 'middle').attr('dy', 22)
+                .attr('fill', 'rgba(255,255,255,0.55)').attr('font-size', 15);
+
+            const nodes = svg.selectAll('g.c-node').data(ETAPAS).join('g');
+            // o nó "Priorizar" fica sem círculo: o traço invadia a palavra (pedido do usuário)
+            nodes.filter((d, i) => ETAPAS[i] !== 'Priorizar').append('circle').attr('class', 'c-dot').attr('r', 0)
+                .attr('fill', 'rgba(255,255,255,0.06)')
+                .attr('stroke', PRIMARY).attr('stroke-width', 1.5);
+            nodes.append('text').attr('class', 'c-label').text(d => d).attr('text-anchor', 'middle')
+                .attr('fill', 'rgba(255,255,255,0.8)').attr('font-size', 14).attr('font-weight', 700).attr('opacity', 0);
+
+            const dot = svg.append('circle').attr('r', 7).attr('fill', PRIMARY)
+                .style('filter', `drop-shadow(0 0 8px ${PRIMARY})`).attr('opacity', 0);
+
+            function pos(i) {
+                const a = -Math.PI / 2 + (i / ETAPAS.length) * Math.PI * 2;
+                return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R, a };
+            }
+            function layout() {
+                nodes.attr('transform', (d, i) => {
+                    const p = pos(i);
+                    const fora = Math.cos(p.a) >= 0 ? 1 : -1;
+                    return `translate(${p.x + 26 * fora},${p.y})`;
+                });
+                nodes.select('circle.c-dot').attr('transform', (d, i) => {
+                    const p = pos(i);
+                    return `translate(${p.x},${p.y})`;
+                }).attr('cx', 0).attr('cy', 0);
+            }
+            layout();
+
+            function entrada() {
+                center.attr('opacity', 0).transition().delay(900).duration(700).attr('opacity', 1);
+                nodes.select('circle.c-dot').transition().delay((d, i) => 200 + i * 160).duration(550).ease(d3.easeBackOut).attr('r', 12);
+                nodes.select('text.c-label').transition().delay((d, i) => 350 + i * 160).duration(500).attr('opacity', 1);
+                dot.attr('opacity', 0).transition().delay(1400).duration(400).attr('opacity', 1);
+            }
+            entrada();
+            window.__cicloReplay = () => {
+                nodes.select('circle.c-dot').attr('r', 0);
+                nodes.select('text.c-label').attr('opacity', 0);
+                center.attr('opacity', 0);
+                entrada();
+            };
+
+            d3.timer((elapsed) => {
+                // partícula circulando + traço do anel fluindo (loop perpétuo)
+                const a = -Math.PI / 2 + (elapsed / 3600) * Math.PI * 2;
+                dot.attr('cx', cx + Math.cos(a) * R).attr('cy', cy + Math.sin(a) * R);
+                anel.attr('stroke-dashoffset', -(elapsed / 30));
+            });
+        })();
+
+        // SLIDE 14: implantação em 6 passos (entrada + partícula em loop)
+        (function () {
+            const PASSOS = [
+                ['Aprovar', ['iniciativa experimental', 'sob governança']],
+                ['Padronizar', ['Baseline v0.6.1 como', 'especificação pré-PoC']],
+                ['Pilotar', ['sistema CGEO de', 'risco controlável']],
+                ['Executar a PoC', ['ciclo completo: políticas,', 'agentes, gates, evidências']],
+                ['Avaliar', ['segurança, conformidade,', 'custos, produtividade']],
+                ['Deliberar', ['continuidade, adoção', 'ou extensão']]
+            ];
+            const W = 960, H = 540;
+            const svg = d3.select('#implanta-stage').append('svg').attr('viewBox', `0 0 ${W} ${H}`);
+            const xs = d3.scalePoint().domain(d3.range(PASSOS.length)).range([110, W - 110]);
+            const cy = H / 2;
+
+            svg.append('line').attr('x1', xs(0)).attr('x2', xs(PASSOS.length - 1)).attr('y1', cy).attr('y2', cy)
+                .attr('stroke', 'rgba(255,255,255,0.12)').attr('stroke-width', 2);
+
+            const nodes = svg.selectAll('g.i-node').data(PASSOS).join('g')
+                .attr('transform', (d, i) => `translate(${xs(i)},${cy})`);
+            nodes.append('circle').attr('r', 0).attr('fill', 'rgba(255,255,255,0.06)')
+                .attr('stroke', PRIMARY).attr('stroke-width', 2)
+                .transition().delay((d, i) => 300 + i * 220).duration(600).ease(d3.easeBackOut).attr('r', 34);
+            nodes.append('text').text((d, i) => i + 1).attr('text-anchor', 'middle').attr('dy', 7)
+                .attr('fill', PRIMARY).attr('font-size', 22).attr('font-weight', 800)
+                .attr('opacity', 0).transition().delay((d, i) => 550 + i * 220).attr('opacity', 1);
+            nodes.append('text').text(d => d[0]).attr('text-anchor', 'middle').attr('dy', (d, i) => (i % 2 === 0 ? -86 : 60))
+                .attr('fill', 'rgba(255,255,255,0.9)').attr('font-size', 18).attr('font-weight', 700)
+                .attr('opacity', 0).transition().delay((d, i) => 700 + i * 220).attr('opacity', 1);
+            nodes.append('text').text(d => d[1][0]).attr('text-anchor', 'middle').attr('dy', (d, i) => (i % 2 === 0 ? -61 : 84))
+                .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 13)
+                .attr('opacity', 0).transition().delay((d, i) => 800 + i * 220).attr('opacity', 1);
+            nodes.append('text').text(d => d[1][1]).attr('text-anchor', 'middle').attr('dy', (d, i) => (i % 2 === 0 ? -46 : 99))
+                .attr('fill', 'rgba(255,255,255,0.5)').attr('font-size', 13)
+                .attr('opacity', 0).transition().delay((d, i) => 880 + i * 220).attr('opacity', 1);
+
+            const particle = svg.append('circle').attr('r', 8).attr('fill', PRIMARY)
+                .attr('cy', cy).attr('cx', xs(0)).style('filter', `drop-shadow(0 0 8px ${PRIMARY})`);
+            function travel() {
+                particle.attr('cx', xs(0)).attr('opacity', 1)
+                    .transition().duration(4200).ease(d3.easeCubicInOut).attr('cx', xs(PASSOS.length - 1))
+                    .transition().duration(300).attr('opacity', 0).on('end', travel);
+            }
+            setTimeout(travel, 1800);
+            window.__implantaReplay = travel;
+        })();
+
+        // SLIDE 15: contadores na entrada + anéis (loop)
+        (function () {
+            const counters = document.querySelectorAll('.metric-value');
+            const io = new IntersectionObserver(entries => {
+                entries.forEach(e => {
+                    if (!e.isIntersecting) return;
+                    const el = e.target;
+                    const target = parseFloat(el.dataset.target) || 0;
+                    const suffix = el.dataset.suffix || '';
+                    d3.select(el).transition().duration(1800).ease(d3.easeCubicOut)
+                        .tween('count', () => {
+                            const i = d3.interpolateNumber(0, target);
+                            return t => el.textContent = Math.round(i(t)) + suffix;
+                        });
+                    io.unobserve(el);
+                });
+            }, { threshold: 0.4 });
+            counters.forEach(c => io.observe(c));
+
+            document.querySelectorAll('.metric-ring circle').forEach((ring, i) => {
+                let offset = 0;
+                setInterval(() => {
+                    offset = (offset + 1.2 + i * 0.3) % 260;
+                    ring.setAttribute('stroke-dashoffset', -offset);
+                }, 30);
+            });
+        })();
+
+        // === CONTROLES DE SLIDE: navegação card-a-card (progresso + botão + teclado) ===
+        (function () {
+            const cardSections = Array.from(document.querySelectorAll('body > section'));
+            if (cardSections.length === 0) return;
+
+            const progress = document.getElementById('mira-progress');
+            const nextBtn = document.getElementById('mira-next');
+            const nextIcon = document.getElementById('mira-next-icon');
+
+            const atBottom = () =>
+                (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 100);
+
+            function currentIndex() {
+                const y = window.scrollY + window.innerHeight * 0.3;
+                let idx = -1;
+                for (let i = 0; i < cardSections.length; i++) {
+                    if (cardSections[i].offsetTop <= y) idx = i;
+                }
+                return idx;
+            }
+
+            function goTo(i) {
+                const idx = Math.max(0, Math.min(cardSections.length - 1, i));
+                cardSections[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            window.addEventListener('scroll', () => {
+                const docH = document.documentElement.scrollHeight - window.innerHeight;
+                progress.style.width = (docH > 0 ? (window.scrollY / docH) * 100 : 0) + '%';
+                nextBtn.classList.toggle('visible', window.scrollY > 300);
+                nextIcon.setAttribute('data-lucide', atBottom() ? 'chevron-up' : 'chevron-down');
+                lucide.createIcons();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (atBottom()) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+                goTo(currentIndex() + 1);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (['ArrowRight', 'ArrowDown', 'PageDown'].includes(e.key)) {
+                    e.preventDefault();
+                    goTo(currentIndex() + 1);
+                } else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) {
+                    e.preventDefault();
+                    const idx = currentIndex();
+                    if (idx <= 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+                    else goTo(idx - 1);
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    goTo(cardSections.length - 1);
+                } else if (e.key.toLowerCase() === 'f') {
+                    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                    else document.exitFullscreen();
+                }
+            });
+        })();
+    </script>
+
+    <!-- Modo edição (reordenar slides): tecla E ou ?edit=1 -->
+    <script src="mira/mira-edit.js" defer></script>
+    <!-- Edição livre estilo Canva (mover/redimensionar/rotacionar/duplicar/excluir/texto): tecla E -->
+    <script src="mira/mira-edit-free.js" defer></script>
+    <!-- mira-draw (desenhar sobre o slide): tecla P ou ?draw=1 -->
+    <script src="mira/mira-draw.js" defer></script>
+</body>
+
+</html>

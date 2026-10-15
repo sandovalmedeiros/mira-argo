@@ -1,0 +1,13 @@
+# Vídeos de fundo do catálogo (182 MB, reinstaláveis com /mira-get-videos)
+mira-templates/videos_header/
+
+# Estado local da instalação do Mira
+.mira/
+
+# Apoio de gravação dos decks (wavs, clipes intermediários, scripts de mux)
+decks/*/mira/
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
