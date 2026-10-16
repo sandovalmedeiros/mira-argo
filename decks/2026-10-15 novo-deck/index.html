@@ -92,6 +92,43 @@ body {
     transform: translateY(-3px);
 }
 
+/* Link em formato de pill (usado no CTA do vídeo narrado) */
+a.attribute-pill {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+/* CTA do pitch narrado (mp4 servido ao lado do deck) */
+.video-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 26px;
+    border-radius: 9999px;
+    background: var(--mira-icon-bg);
+    border: 1px solid var(--mira-icon-border);
+    color: var(--mira-text);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    transition: all 0.25s ease;
+}
+.video-cta:hover {
+    background: var(--mira-glow-strong);
+    border-color: var(--mira-primary);
+    transform: translateY(-3px);
+}
+.video-cta__hint {
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--mira-text-softer);
+    border-left: 1px solid var(--mira-card-border);
+    padding-left: 10px;
+}
+
 /* Palco de animação D3 — tamanho padrão do canvas */
 .anim-stage {
     width: 100%;
@@ -435,6 +472,13 @@ img, svg, video, canvas, iframe, table, pre { max-width: 100%; }
                 <span class="attribute-pill px-4 py-2"><i data-lucide="calendar" class="inline w-4 h-4 mr-2 primary-color"></i>Outubro de 2026</span>
                 <span class="attribute-pill px-4 py-2"><i data-lucide="scroll-text" class="inline w-4 h-4 mr-2 primary-color"></i>Documento Base para Deliberação Gerencial</span>
             </div>
+            <div class="mt-10">
+                <a class="video-cta" href="argo-pitch-narrado.mp4" target="_blank" rel="noopener">
+                    <i data-lucide="play-circle" class="w-5 h-5 primary-color"></i>
+                    <span>Assistir ao pitch narrado</span>
+                    <span class="video-cta__hint">12 min · 1080p · com áudio</span>
+                </a>
+            </div>
         </div>
     </section>
 
@@ -651,6 +695,7 @@ img, svg, video, canvas, iframe, table, pre { max-width: 100%; }
                 <span class="attribute-pill px-6 py-3 text-base" style="border-color: var(--mira-icon-border); background: var(--mira-icon-bg);"><i data-lucide="check" class="inline w-4 h-4 mr-2 primary-color"></i>Aprovar a PoC</span>
                 <span class="attribute-pill px-6 py-3 text-base"><i data-lucide="file-text" class="inline w-4 h-4 mr-2 primary-color"></i>Baseline v0.6.1</span>
                 <span class="attribute-pill px-6 py-3 text-base"><i data-lucide="shield" class="inline w-4 h-4 mr-2 primary-color"></i>Risco controlado</span>
+                <a class="attribute-pill px-6 py-3 text-base" href="argo-pitch-narrado.mp4" target="_blank" rel="noopener"><i data-lucide="play-circle" class="inline w-4 h-4 mr-2 primary-color"></i>Assistir ao pitch narrado (12 min)</a>
             </div>
         </div>
     </section>
@@ -1437,12 +1482,10 @@ img, svg, video, canvas, iframe, table, pre { max-width: 100%; }
         })();
     </script>
 
-    <!-- Modo edição (reordenar slides): tecla E ou ?edit=1 -->
-    <script src="mira/mira-edit.js" defer></script>
-    <!-- Edição livre estilo Canva (mover/redimensionar/rotacionar/duplicar/excluir/texto): tecla E -->
-    <script src="mira/mira-edit-free.js" defer></script>
-    <!-- mira-draw (desenhar sobre o slide): tecla P ou ?draw=1 -->
-    <script src="mira/mira-draw.js" defer></script>
+    <!-- Modo edição/desenho (mira-edit, mira-edit-free, mira-draw) REMOVIDO desta versão
+         publicada: esses arquivos não fazem parte do deck entregue (davam 404 silencioso) e a
+         apresentação é somente leitura — as teclas E e P não fazem mais nada. Para reativar,
+         incluir os scripts correspondentes na pasta mira/ do repositório e devolver as tags aqui. -->
 </body>
 
 </html>
